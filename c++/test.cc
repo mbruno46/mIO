@@ -31,7 +31,7 @@ int main()
    fname2="../test.dat";
    mIO m(fname2);
    m.write("variable1",&b,1);
-   m.write("vector-length",&n,1);
+   m.write("vector-length",n);
    m.write("mytext",text);
    m.write("myvector",vec,n);
    m.write("myfield",f1,2);

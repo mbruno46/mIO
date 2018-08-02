@@ -165,6 +165,12 @@ class mIO
 	 fclose(f);
       }
 
+      template <class T> void write(const char *varname,T var)
+      {
+	 T tmp=var;
+	 write(varname,&tmp,1);
+      }
+
       void write(const char *varname, std::string &var)
       {
 	 std::string tmp(var);
