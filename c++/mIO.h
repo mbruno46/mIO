@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include <string>
 #include <typeinfo>
 
 #define TAG_LEN 128
@@ -56,14 +56,20 @@ class mIO
 
       template <class T> void read(const char *varname,T *var)
       {
+	 read(varname,var,0);
+      }
+
+      template <class T> void read(const char *varname,T *var,int id)
+      {
 	 FILE *f;
-	 int ic, n, len;
+	 int ic, n, len, count;
 	 size_t bytes;
 	 char type, tag[TAG_LEN];
 
 	 f=fopen(fname,"rb");
 	 ic = fread(&len, sizeof(int), 1, f);
 	 
+	 count=0;
 	 while (!feof(f))
 	 {
 	    memset(tag,0,TAG_LEN);
@@ -76,18 +82,30 @@ class mIO
 
 	    if (strcmp(varname, tag)==0)
 	    {
-     	       ic += fread(var, bytes, n, f);
-	       if (ic!=(3+len+n))
+	       if (count==id)
 	       {
-		  printf("Reading error \n");
-		  exit(2);
+		  ic += fread(var, bytes, n, f);
+	   	  if (ic!=(3+len+n))
+	      	  {
+	   	     printf("Reading error \n");
+	   	     exit(2);
+	      	  }
 	       }
+	       else
+		  fseek(f,n*bytes,SEEK_CUR);
+	       count++;
 	    }
 	    else
 	       fseek(f,n*bytes,SEEK_CUR);
 
 	    ic = fread(&len, sizeof(int), 1, f);
 	 }
+
+	 if (count==0)
+	    printf("Error: field %s not found\n",varname);
+
+	 if (id>count-1)
+	    printf("Error: %d instance of field %s not found [max = %d] \n",id,varname,count);
 
 	 fclose(f);
       }
@@ -133,6 +151,13 @@ class mIO
 	 }
 
 	 fclose(f);
+      }
+
+      void write(const char *varname, std::string &var)
+      {
+	 std::string tmp(var);
+	 tmp.push_back('\0');
+	 write(varname,(char*)tmp.c_str(),tmp.size());
       }
 
       void print(void)
