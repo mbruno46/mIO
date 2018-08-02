@@ -9,7 +9,7 @@ int main()
    double *vec;
    double f1[2], f2[2];
    char fname[64];
-   std::string text;
+   std::string text, fname2;
    
    sprintf(fname,"../test.dat");
 
@@ -28,7 +28,8 @@ int main()
 
    text="here-goes-some-text";
 
-   mIO m(fname);
+   fname2="../test.dat";
+   mIO m(fname2);
    m.write("variable1",&b,1);
    m.write("vector-length",&n,1);
    m.write("mytext",text);
