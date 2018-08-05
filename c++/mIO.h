@@ -178,6 +178,43 @@ class mIO
 	 write(varname,(char*)tmp.c_str(),tmp.size());
       }
 
+      void print_tags(void)
+      {
+	 FILE *f;
+	 int ic, n;
+	 size_t bytes, len;
+	 char type, tag[TAG_LEN];
+	 char line[1024];
+
+	 f=fopen(fname,"rb");
+	 ic = fread(&len, sizeof(int), 1, f);
+	 
+	 while (!feof(f))
+	 {
+	    memset(tag,0,TAG_LEN);
+
+	    ic += fread(tag, sizeof(char), len, f);
+	    ic += fread(&type, sizeof(char), 1, f);
+	    ic += fread(&n, sizeof(int), 1, f);
+
+	    bytes = get_bytes(type);
+
+	    sprintf(line," - %s [%d %c]",tag,n,type);
+	    ic += fseek(f, bytes*n, SEEK_CUR);
+	    printf("%s \n",line); 
+
+	    if (ic!=(3+len))
+	    {
+	       printf("Reading error \n");
+	       exit(2);
+	    }
+	 
+	    ic = fread(&len, sizeof(int), 1, f);
+	 }
+
+	 fclose(f);
+      }
+
       void print(void)
       {
 	 FILE *f;
@@ -238,6 +275,76 @@ class mIO
 	 fclose(f);
       }
 
+      void print(const char *varname,int id)
+      {
+	 FILE *f;
+	 int ic, n, count;
+	 size_t bytes, len;
+	 char type, tag[TAG_LEN];
+	 char line[1024];
+
+	 f=fopen(fname,"rb");
+	 ic = fread(&len, sizeof(int), 1, f);
+	 
+	 while (!feof(f))
+	 {
+	    memset(tag,0,TAG_LEN);
+
+	    ic += fread(tag, sizeof(char), len, f);
+	    ic += fread(&type, sizeof(char), 1, f);
+	    ic += fread(&n, sizeof(int), 1, f);
+
+	    bytes = get_bytes(type);
+
+	    if (strcmp(varname, tag)==0)
+	    {
+	       if (count==id)
+	       {
+		  sprintf(line,"# %s \n",tag);
+		  if (type=='c')
+		  {
+		     char var[n];
+		     ic += fread(var, bytes, n, f);
+		     sprintf(line,"%s %s",line,var);
+		  }
+		  else if (type=='i')
+		  {
+		     int var;
+		     for (int i=0;i<n;i++)
+		     {
+			ic += fread(&var, bytes, 1, f);
+			sprintf(line,"%s %d",line,var);
+		     }
+		  }
+		  else if (type=='d')
+		  {
+		     double var;
+		     for (int i=0;i<n;i++)
+		     {
+			ic += fread(&var, bytes, 1, f);
+			sprintf(line,"%s %f",line,var);
+		     }
+		  }
+		  printf("%s \n",line); 
+
+		  if (ic!=(3+len+n))
+		  {
+		     printf("Reading error \n");
+		     exit(2);
+		  }
+	       } 
+	       else
+		  fseek(f,n*bytes,SEEK_CUR);
+	       count++;
+	    }
+	    else
+	       fseek(f,n*bytes,SEEK_CUR);
+	 
+	    ic = fread(&len, sizeof(int), 1, f);
+	 }
+
+	 fclose(f);
+      }
 };
 
 #endif
