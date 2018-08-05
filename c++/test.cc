@@ -41,8 +41,10 @@ int main()
    double *vec2;
    mIO m2(fname);
    m2.read("vector-length",&n2);
+   int n3 = m2.size("myvector");
    vec2 = new double[n2];
    m2.read("myvector",vec2);
+   printf("vector-length = %d vs size = %d\n",n2,n3);
 
    m2.print();
 

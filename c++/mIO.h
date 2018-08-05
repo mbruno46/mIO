@@ -121,6 +121,56 @@ class mIO
 
 	 fclose(f);
       }
+      
+      int size(const char *varname,int id)
+      {
+	 FILE *f;
+	 int ic, n, len, count;
+	 size_t bytes;
+	 char type, tag[TAG_LEN];
+
+	 f=fopen(fname,"rb");
+	 ic = fread(&len, sizeof(int), 1, f);
+	 
+	 count=0;
+	 while (!feof(f))
+	 {
+	    memset(tag,0,TAG_LEN);
+
+	    ic += fread(tag, sizeof(char), len, f);
+	    ic += fread(&type, sizeof(char), 1, f);
+	    ic += fread(&n, sizeof(int), 1, f);
+
+	    bytes = get_bytes(type);
+
+	    if (strcmp(varname, tag)==0)
+	    {
+	       if (count==id)
+		  break;
+	       else
+		  fseek(f,n*bytes,SEEK_CUR);
+	       count++;
+	    }
+	    else
+	       fseek(f,n*bytes,SEEK_CUR);
+
+	    ic = fread(&len, sizeof(int), 1, f);
+	 }
+
+	 if (count==0)
+	    printf("Error: field %s not found\n",varname);
+
+	 if (id>count-1)
+	    printf("Error: %d instance of field %s not found [max = %d] \n",id,varname,count);
+
+	 fclose(f);
+	 return n;
+      }
+
+      int size(const char *varname)
+      {
+	 return size(varname,0);
+      }
 
       template <class T> void write(const char *varname,T *var,int n)
       {
