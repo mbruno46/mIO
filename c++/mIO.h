@@ -51,10 +51,11 @@ class mIO
 	 memcpy(fname,f,strlen(f));
       }
       
-      mIO(std::string &f)
+      mIO(std::string f)
       {
 	 FILE *ff;
 	 writable=false;
+	 f.push_back('\0');
 	 ff=fopen((char*)f.c_str(),"rb");
 	 if (ff==NULL)
 	    writable=true;
@@ -237,7 +238,7 @@ class mIO
 	 int ic, n;
 	 size_t bytes, len;
 	 char type, tag[TAG_LEN];
-	 char line[1024];
+	 char line[4096];
 
 	 f=fopen(fname,"rb");
 	 ic = fread(&len, sizeof(int), 1, f);
@@ -274,7 +275,7 @@ class mIO
 	 int ic;
 	 size_t bytes, len, n;
 	 char type, tag[TAG_LEN];
-	 char line[1024];
+	 char line[4096];
 
 	 f=fopen(fname,"rb");
 	 ic = fread(&len, sizeof(int), 1, f);
@@ -334,7 +335,7 @@ class mIO
 	 int ic, n, count;
 	 size_t bytes, len;
 	 char type, tag[TAG_LEN];
-	 char line[1024];
+	 char line[4096];
 
 	 f=fopen(fname,"rb");
 	 ic = fread(&len, sizeof(int), 1, f);

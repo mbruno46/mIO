@@ -2,7 +2,23 @@
 
 A simple IO file format compatible with C++, Python based on tag recognition.
 
-A quick example in c++
+It allows the user to store data in binary format by attaching a short text (tag)
+that supposedly identifies the data and simplifies the reading.
+
+It is primarily a c++/python library self-contained in a single file. 
+The documentation can be found here: [c++](./doc/cdoc.md) and [python](./doc/pydoc.md). 
+
+Note that the c++ folder contains some useful additional tools to 
+quickly inspect and read data files generated with mIO.
+It requires to be compiled
+
+```bash
+cd c++
+./compile.sh
+```
+
+----
+Below is a quick example in c++
 
 ```c++
 #include <stdlib.h>
