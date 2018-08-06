@@ -37,18 +37,6 @@ class mIO
 
    public:
 
-      mIO(std::string &f)
-      {
-	 FILE *ff;
-	 writable=false;
-	 ff=fopen((char*)f.c_str(),"rb");
-	 if (ff==NULL)
-	    writable=true;
-	 fclose(ff);
-	 fname = (char*)malloc(f.size());
-	 memcpy(fname,(char*)f.c_str(),f.size());
-      }
-
       mIO(const char *f)
       {
 	 FILE *ff;
@@ -56,10 +44,13 @@ class mIO
 	 ff=fopen(f,"rb");
 	 if (ff==NULL)
 	    writable=true;
-	 fclose(ff);
+	 else
+	    fclose(ff);
 	 fname = (char*)malloc(strlen(f));
 	 memcpy(fname,f,strlen(f));
       }
+      
+      mIO(std::string &f) {mIO((char*)f.c_str());}
 
       ~mIO(void)
       {
