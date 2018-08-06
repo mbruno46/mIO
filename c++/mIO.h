@@ -50,8 +50,19 @@ class mIO
 	 memcpy(fname,f,strlen(f));
       }
       
-      mIO(std::string &f) {mIO((char*)f.c_str());}
-
+      mIO(std::string &f)
+      {
+	 FILE *ff;
+	 writable=false;
+	 ff=fopen((char*)f.c_str(),"rb");
+	 if (ff==NULL)
+	    writable=true;
+	 else
+	    fclose(ff);
+	 fname = (char*)malloc(f.size());
+	 memcpy(fname,(char*)f.c_str(),f.size());
+      }
+      
       ~mIO(void)
       {
 	 free(fname);
