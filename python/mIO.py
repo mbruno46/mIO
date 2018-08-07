@@ -44,6 +44,8 @@ class mIO:
                         if count==idx:
                             res = self.__reader(type_r,n,f)
                             break
+                        else:
+                            self.__seeker(type_r,n,f)
                     count += 1
                 else:
                     self.__seeker(type_r,n,f)

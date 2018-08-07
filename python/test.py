@@ -15,3 +15,8 @@ print 'and printing '
 print f
 
 print f.fields()
+
+print f.read("myfield",0)
+print f.read("myfield",1)
+print f.read("myfield",2)
+
