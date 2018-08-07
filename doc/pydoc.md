@@ -49,3 +49,17 @@ file, for example by printing all the tags
 ```python
 print f.fields()
 ```
+
+Alternatively it is also possible to load
+the entire dat file in memory. A dictionary
+is created with the tags provided in the file
+and a list is attached to each field depending
+on how many times the same field appears in the
+file
+
+```python
+dic = f.load()
+print dic["myvec"] # this prints a list of tuples
+print dic["myvec"][0] # this print a tuple with the content
+```
+
