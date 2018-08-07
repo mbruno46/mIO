@@ -30,7 +30,7 @@ class mIO:
                         res.append( var )
                     else:
                         if count==idx:
-                            res.append( var )
+                            res = var
                             break
                     count += 1
         return res
