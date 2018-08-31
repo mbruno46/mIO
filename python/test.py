@@ -20,3 +20,5 @@ print f.read("myfield",0)
 print f.read("myfield",1)
 print f.read("myfield",2)
 
+m = mIO('test')
+print m.exists

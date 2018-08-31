@@ -1,9 +1,11 @@
 import struct
+import os.path
 
 class mIO:
     def __init__(self,name,endian='<'):
         self.fname = name
         self.endian = endian
+        self.exists = os.path.isfile(name)
 
     def __reader(self,type_r,n,f):
         if type_r is 'c':
@@ -25,6 +27,8 @@ class mIO:
     def read(self,tag,idx=None):
         res = []
         count = 0
+        if not self.exists:
+            return []
         with open(self.fname,'rb') as f:
             while True:
                 bb = f.read(4)
@@ -57,6 +61,8 @@ class mIO:
         for fff in ff:
             res[fff] = []
 
+        if not self.exists:
+            return {}
         with open(self.fname,'rb') as f:
             while True:
                 bb = f.read(4)
@@ -74,6 +80,8 @@ class mIO:
     
     def __str__(self):
         res = ''
+        if not self.exists:
+            return 'file not found'
         with open(self.fname,'rb') as f:
             while True:
                 bb = f.read(4)
@@ -98,6 +106,8 @@ class mIO:
 
     def fields(self):
         res = []
+        if not self.exists:
+            return []
         with open(self.fname,'rb') as f:
             while True:
                 bb = f.read(4)
@@ -114,6 +124,8 @@ class mIO:
     
     def howmany(self,tag):
         count = 0
+        if not self.exists:
+            return -1
         with open(self.fname,'rb') as f:
             while True:
                 bb = f.read(4)

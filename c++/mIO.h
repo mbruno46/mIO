@@ -17,6 +17,13 @@ class mIO
    private:
       char *fname;
       bool writable;
+      bool bigend;
+
+      struct {
+	 long int pos;
+	 int n;
+	 char type;
+      } field;
 
       size_t get_bytes(char t)
       {
@@ -36,6 +43,55 @@ class mIO
       char get_type(double &v) {return 'd';}
       char get_type(double *v) {return 'd';}
 
+      bool isBigEndian()
+      {
+	 int num=1;
+	 if (*(char*)&num==1)
+	    return false;
+	 else
+	    return true;
+      }
+
+      void bswap(size_t n,size_t b,const void *x,void *y)
+      {
+	 unsigned char *xx,*yy;
+	 int i,j;
+
+	 xx=(unsigned char *)x;
+	 yy=(unsigned char *)y;
+	 for (i=0;i<n;i++)
+	    for (j=0;j<b;j++)
+	       yy[i*b + j]=xx[i*b + b-1-j];
+      }
+
+      int safe_fwrite(const void *x,size_t s,size_t n,FILE *f)
+      {
+	 int ic;
+	 if (!bigend)
+	    ic = fwrite(x, s, n, f);
+	 else
+	 {
+	    void *ptr = malloc(s*n);
+	    bswap(n,s,x,ptr);
+	    ic = fwrite(ptr, s, n, f);
+	 }
+	 return ic;
+      }
+      
+      int safe_fread(void *x,size_t s,size_t n,FILE *f)
+      {
+	 int ic;
+	 if (!bigend)
+	    ic = fread(x, s, n, f);
+	 else
+	 {
+	    void *ptr = malloc(s*n);
+	    ic = fread(ptr, s, n, f);
+	    bswap(n,s,ptr,x);
+	 }
+	 return ic;
+      }
+
    public:
 
       mIO(const char *f)
@@ -49,6 +105,7 @@ class mIO
 	    fclose(ff);
 	 fname = (char*)malloc(strlen(f));
 	 memcpy(fname,f,strlen(f));
+	 bigend=isBigEndian();
       }
       
       mIO(std::string f)
@@ -63,58 +120,58 @@ class mIO
 	    fclose(ff);
 	 fname = (char*)malloc(f.size());
 	 memcpy(fname,(char*)f.c_str(),f.size());
+	 bigend=isBigEndian();
       }
       
       ~mIO(void)
       {
 	 free(fname);
       }
-
-      template <class T> void read(const char *varname,T *var)
-      {
-	 read(varname,var,0);
-      }
-
-      template <class T> void read(const char *varname,T *var,int id)
+      
+      void find(const char *varname,int id)
       {
 	 FILE *f;
-	 int ic, n, len, count;
+	 int ic, count;
 	 size_t bytes;
-	 char type, tag[TAG_LEN];
+	 char tag[TAG_LEN];
+	 long int end;
+	 unsigned int len;
 
 	 f=fopen(fname,"rb");
-	 ic = fread(&len, sizeof(int), 1, f);
-	 
+	 fseek(f,0,SEEK_END);
+	 end=ftell(f);
+	 fseek(f,0,SEEK_SET);
+
 	 count=0;
-	 while (!feof(f))
+	 while (ftell(f)<end)
 	 {
 	    memset(tag,0,TAG_LEN);
 
-	    ic += fread(tag, sizeof(char), len, f);
-	    ic += fread(&type, sizeof(char), 1, f);
-	    ic += fread(&n, sizeof(int), 1, f);
+	    ic  = safe_fread(&len, sizeof(int), 1, f);
+	    ic += safe_fread(tag, sizeof(char), len, f);
+	    ic += safe_fread(&field.type, sizeof(char), 1, f);
+	    ic += safe_fread(&field.n, sizeof(int), 1, f);
+	    if (ic!=(3+len))
+	    {
+	       printf("Reading error \n");
+	       exit(2);
+	    }
 
-	    bytes = get_bytes(type);
+	    bytes = get_bytes(field.type);
 
 	    if (strcmp(varname, tag)==0)
 	    {
 	       if (count==id)
 	       {
-		  ic += fread(var, bytes, n, f);
-	   	  if (ic!=(3+len+n))
-	      	  {
-	   	     printf("Reading error \n");
-	   	     exit(2);
-	      	  }
+		  field.pos = ftell(f);
+		  break;
 	       }
 	       else
-		  fseek(f,n*bytes,SEEK_CUR);
+		  fseek(f,field.n*bytes,SEEK_CUR);
 	       count++;
 	    }
 	    else
-	       fseek(f,n*bytes,SEEK_CUR);
-
-	    ic = fread(&len, sizeof(int), 1, f);
+	       fseek(f,field.n*bytes,SEEK_CUR);
 	 }
 
 	 if (count==0)
@@ -123,57 +180,48 @@ class mIO
 	 if (id>count-1)
 	    printf("Error: %d instance of field %s not found [max = %d] \n",id,varname,count);
 
+	 fclose(f);
+      }
+
+      void read(const char *varname,void *var)
+      {
+	 read(varname,var,0,false);
+      }
+
+      void read(const char *varname,void *var,int id)
+      {
+	 read(varname,var,id,false);
+      }
+
+      void read(const char *varname,void *var,int id,bool dryrun)
+      {
+	 FILE *f;
+	 size_t bytes;
+
+	 find(varname,id);
+
+	 f=fopen(fname,"rb");
+	 fseek(f,field.pos,SEEK_SET);
+
+	 bytes = get_bytes(field.type);
+	 if (safe_fread(var, bytes, field.n, f) != field.n)
+	 {
+	    printf("Reading error \n");
+	    exit(2);
+	 }
 	 fclose(f);
       }
       
       int size(const char *varname,int id)
       {
-	 FILE *f;
-	 int ic, n, len, count;
-	 size_t bytes;
-	 char type, tag[TAG_LEN];
-
-	 f=fopen(fname,"rb");
-	 ic = fread(&len, sizeof(int), 1, f);
-	 
-	 count=0;
-	 while (!feof(f))
-	 {
-	    memset(tag,0,TAG_LEN);
-
-	    ic += fread(tag, sizeof(char), len, f);
-	    ic += fread(&type, sizeof(char), 1, f);
-	    ic += fread(&n, sizeof(int), 1, f);
-
-	    bytes = get_bytes(type);
-
-	    if (strcmp(varname, tag)==0)
-	    {
-	       if (count==id)
-		  break;
-	       else
-		  fseek(f,n*bytes,SEEK_CUR);
-	       count++;
-	    }
-	    else
-	       fseek(f,n*bytes,SEEK_CUR);
-
-	    ic = fread(&len, sizeof(int), 1, f);
-	 }
-
-	 if (count==0)
-	    printf("Error: field %s not found\n",varname);
-
-	 if (id>count-1)
-	    printf("Error: %d instance of field %s not found [max = %d] \n",id,varname,count);
-
-	 fclose(f);
-	 return n;
+	 find(varname,id);
+	 return field.n;
       }
 
       int size(const char *varname)
       {
-	 return size(varname,0);
+	 find(varname,0);
+	 return field.n;
       }
 
       template <class T> void write(const char *varname,T *var,int n)
@@ -200,13 +248,13 @@ class mIO
 
 	 f=fopen(fname,"ab");
 	
-	 ic  = fwrite(&len, sizeof(int), 1, f);
-      	 ic += fwrite(varname, sizeof(char), len, f);
-	 ic += fwrite(&type, sizeof(char), 1, f);
-	 ic += fwrite(&n, sizeof(int), 1, f);
+	 ic  = safe_fwrite(&len, sizeof(int), 1, f);
+      	 ic += safe_fwrite(varname, sizeof(char), len, f);
+	 ic += safe_fwrite(&type, sizeof(char), 1, f);
+	 ic += safe_fwrite(&n, sizeof(int), 1, f);
 
 	 bytes = get_bytes(type);
-	 ic += fwrite(var, bytes, n, f);
+	 ic += safe_fwrite(var, bytes, n, f);
 
 	 //printf("Written variable %s with %d elements of bytes %lu \n",varname,n,bytes);
 
@@ -332,71 +380,45 @@ class mIO
       void print(const char *varname,int id)
       {
 	 FILE *f;
-	 int ic, n, count;
-	 size_t bytes, len;
-	 char type, tag[TAG_LEN];
+	 int ic, n;
+	 size_t bytes;
 	 char line[4096];
 
+	 find(varname,id);
+
 	 f=fopen(fname,"rb");
-	 ic = fread(&len, sizeof(int), 1, f);
-	 
-	 while (!feof(f))
+	 fseek(f,field.pos,SEEK_SET);
+	 bytes = get_bytes(field.type);
+
+	 sprintf(line,"# %s \n",varname);
+	 ic=0;
+	 if (field.type=='c')
 	 {
-	    memset(tag,0,TAG_LEN);
-
-	    ic += fread(tag, sizeof(char), len, f);
-	    ic += fread(&type, sizeof(char), 1, f);
-	    ic += fread(&n, sizeof(int), 1, f);
-
-	    bytes = get_bytes(type);
-
-	    if (strcmp(varname, tag)==0)
-	    {
-	       if (count==id)
-	       {
-		  sprintf(line,"# %s \n",tag);
-		  if (type=='c')
-		  {
-		     char var[n];
-		     ic += fread(var, bytes, n, f);
-		     sprintf(line,"%s %s",line,var);
-		  }
-		  else if (type=='i')
-		  {
-		     int var;
-		     for (int i=0;i<n;i++)
-		     {
-			ic += fread(&var, bytes, 1, f);
-			sprintf(line,"%s %d",line,var);
-		     }
-		  }
-		  else if (type=='d')
-		  {
-		     double var;
-		     for (int i=0;i<n;i++)
-		     {
-			ic += fread(&var, bytes, 1, f);
-			sprintf(line,"%s %f",line,var);
-		     }
-		  }
-		  printf("%s \n",line); 
-
-		  if (ic!=(3+len+n))
-		  {
-		     printf("Reading error \n");
-		     exit(2);
-		  }
-	       } 
-	       else
-		  fseek(f,n*bytes,SEEK_CUR);
-	       count++;
-	    }
-	    else
-	       fseek(f,n*bytes,SEEK_CUR);
-	 
-	    ic = fread(&len, sizeof(int), 1, f);
+	    char var[field.n];
+	    ic = safe_fread(var, bytes, field.n, f);
+	    sprintf(line,"%s %s",line,var);
 	 }
+	 else if (field.type=='i')
+	 {
+	    int var[field.n];
+	    ic = safe_fread(var, bytes, field.n, f);
+	    for (int i=0;i<field.n;i++)
+	       sprintf(line,"%s %d",line,var[i]);
+	 }
+	 else if (field.type=='d')
+	 {
+	    double var[field.n];
+	    ic = safe_fread(var, bytes, field.n, f);
+	    for (int i=0;i<field.n;i++)
+	       sprintf(line,"%s %e",line,var[i]);
+	 }
+	 printf("%s \n",line); 
 
+	 if (ic!=(field.n))
+	 {
+	    printf("Reading error \n");
+	    exit(2);
+	 }
 	 fclose(f);
       }
 };
