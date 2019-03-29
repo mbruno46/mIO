@@ -1,11 +1,13 @@
 # mIO
 
-A simple IO file format compatible with C++, Python based on tag recognition.
+A simple IO file format based on tag recognition,
+compatible with C, C++ and Python.
 
 It allows the user to store data in binary format by attaching a short text (tag)
-that supposedly identifies the data and simplifies the reading.
+that identifies the data and simplifies the reading.
 
 It is primarily a c++/python library self-contained in a single file. 
+A c implementation is provided as well. 
 The documentation can be found here: 
 [c] (./doc/cdoc.md), 
 [c++](./doc/cppdoc.md) and [python](./doc/pydoc.md). 

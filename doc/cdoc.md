@@ -61,6 +61,10 @@ the field
 4. the number of elements of the field
 
 The same tag can be used multiple times.
+Currently the c implementation does not 
+support the writing of **simultaneous**
+files in the same program, like the c++
+version [c++](./doc/cppdoc.md).
 
 ## Reading
 
