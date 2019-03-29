@@ -1,75 +1,91 @@
-# mIO documentation - C++
+# mIO documentation - C
 
-The class can be initialized by
-passing a string or char array
+The c implementation requires the 
+compilation of the library before 
+using it, unless the user copies
+*mIO.h* and *mIO.c* in the same
+directory of the main program.
+The script *compile.sh* automatically
+creates a static library that 
+can be easily integrated in a program
+by adding the following flags to a 
+*gcc* compiler for example
 
-```c++
-std::string fname="filename-here";
-mIO f(fname);
-
-char *fname="filename-here";
-mIO f(fname);
+```bash
+MIO_PATH=/path/to/mIO
+gcc main.c -o main.x -I$MIO_PATH -L$MIO_PATH -lmIO
 ```
 
-## Writing 
+and by including the header in the 
+main program
+```c
+#include "mIO.h"
+```
 
-Once the class is initialized the user
+The module is initialized by
+passing a char array to the 
+function *mIO*
+
+```c
+char *fname="filename-here";
+mIO(fname);
+```
+
+## Writing
+
+Once the module is initialized the user
 can write a char, int or double variable
 by simply typing
 
-```c++
+```c
 char vc;
 int vi;
 double vd;
 
-f.write("mychar",vc);
-f.write("myint",vi);
-f.write("mydouble",vd);
+mIOwrite("mychar",'c',&vc,1);
+mIOwrite("myint",'i',&vi,1);
+mIOwrite("mydouble",'d',&vd,1);
 ```
 
-The key feature of this library is the 
-possibility to use a tag to identify the
-content the variable in a human readable
-way.
+List of arguments of *mIOwrite*:
+
+1. a char array (or string) with  the 
+name or tag of the field
+
+2. a single char chosen among the 3 
+given above, to specify the type of
+the field
+
+3. a pointer to the field
+
+4. the number of elements of the field
 
 The same tag can be used multiple times.
 
-To write an array to disk it is enough
-to additionally pass the length of the 
-array
-
-```c++
-double vec[10];
-
-f.write("mydoublevec",vec,10);
-```
-
 ## Reading
-Once the class is initialized the user
+
+Once the module is initialized the user
 can read any variable or array
 by passing the appropriate tag
 
-```c++
+```c
 double vd;
 double vec[10];
 
-f.read("mydouble",&vd);
-f.read("mydoublevec",vec);
+mIOread("mydouble",'d',&vd,1);
+mIOread("mydoublevec",'d',vec,10);
 ```
 
-Note the length is not required because it is
-stored in the data file. However the array
-must be allocated with the right size. If the
-size is not known a priori the user can 
-get by typing
+Compared to the [c++](./cppdoc.md) 
+compilation, 
+the user must specify both type and 
+number of elements to be read in.
+If the size is not known a priori
+the user can get it by typing
 
-```c++
-double *vec;
-int s;
-
-s = f.size("mydoublevec");
-vec=new double[s];
-f.read("mydoublevec",vec);
+```c
+mIOsize("mydoublevec",'d');
 ```
+
 
 

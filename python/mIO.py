@@ -54,6 +54,47 @@ class mIO:
                 else:
                     self.__seeker(type_r,n,f)
         return res
+    
+    def get(self,tag,idx=None):
+        res = []
+        count = 0
+        if not self.exists:
+            return []
+        with open(self.fname,'rb') as f:
+            while True:
+                bb = f.read(4)
+                if not bb:
+                    break
+                else:
+                    [n] = struct.unpack(self.endian+'i',bb)
+                tag_r = struct.unpack(self.endian+'c'*n,f.read(n))
+                (type_r,) = struct.unpack(self.endian+'c',f.read(1))
+                [n] = struct.unpack(self.endian+'i',f.read(4))
+                
+                if tag==''.join(tag_r):
+                    if idx==None:
+                        var = self.__reader(type_r,n,f)
+                        if (len(var)==1):
+                            res.append( var[0] )
+                        else:
+                            res.append( list(var) )
+                    else:
+                        if count==idx:
+                            res = self.__reader(type_r,n,f)
+                            if len(res)==1:
+                                res=res[0]
+                            else:
+                                res=list(res)
+                            break
+                        else:
+                            self.__seeker(type_r,n,f)
+                    count += 1
+                else:
+                    self.__seeker(type_r,n,f)
+        if (len(res)==1):
+            return res[0]        
+        return res
+
 
     def load(self):
         res = {}

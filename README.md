@@ -6,11 +6,13 @@ It allows the user to store data in binary format by attaching a short text (tag
 that supposedly identifies the data and simplifies the reading.
 
 It is primarily a c++/python library self-contained in a single file. 
-The documentation can be found here: [c++](./doc/cdoc.md) and [python](./doc/pydoc.md). 
+The documentation can be found here: 
+[c] (./doc/cdoc.md), 
+[c++](./doc/cppdoc.md) and [python](./doc/pydoc.md). 
 
 Note that the c++ folder contains some useful additional tools to 
 quickly inspect and read data files generated with mIO.
-It requires to be compiled
+These tools can be compiled by running 
 
 ```bash
 cd c++
@@ -18,7 +20,7 @@ cd c++
 ```
 
 ----
-Below is a quick example in c++
+Below is a short example in c++
 
 ```c++
 #include <stdlib.h>
